@@ -4,9 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>飯約 · 有人約吃飯</title>
-  <meta property="og:title" content="飯約：有人約吃飯，一起來嗎？">
-  <meta property="og:description" content="打開飯約 App 查看這場飯局，申請加入。">
+  <title>飯飯 · 有人約吃飯</title>
+  <meta name="description" content="打開飯飯 App 查看這場飯局，申請加入。">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="飯飯 fanfan">
+  <meta property="og:title" content="飯飯：有人約吃飯，一起來嗎？">
+  <meta property="og:description" content="打開飯飯 App 查看這場飯局的時間、地點和主揪，申請加入。">
+  <meta property="og:url" content="https://waynechen983.github.io/eatwith-site/share/">
+  <meta property="og:image" content="https://waynechen983.github.io/eatwith-site/share/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="飯飯：先吃頓飯，也許就心動了">
+  <meta name="twitter:card" content="summary_large_image">
   <style>
     :root { --accent: #d2385f; --ink: #1d1d1f; --muted: #6e6e73; --bg: #f5f5f7; --card: #fff; }
     @media (prefers-color-scheme: dark) { :root { --ink: #f5f5f7; --muted: #a1a1a6; --bg: #000; --card: #1c1c1e; } }
@@ -19,7 +28,11 @@
     h1 { font-size: 26px; margin: 0 0 8px; }
     p { color: var(--muted); margin: 0 0 24px; }
     a.button { display: block; padding: 15px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; }
+    a.button + a.button { margin-top: 12px; }
+    a.button.outline { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
     a.secondary { display: block; margin-top: 12px; color: var(--accent); text-decoration: none; font-size: 15px; }
+    .notice { margin: 0 0 16px; padding: 10px 14px; border-radius: 14px; background: rgba(210,56,95,.1); color: var(--ink); font-size: 15px; }
+    .hint { margin: 12px 0 0; font-size: 14px; }
     [hidden] { display: none !important; }
     small { display: block; margin-top: 24px; color: var(--muted); font-size: 13px; }
   </style>
@@ -27,38 +40,95 @@
 <body>
   <main>
     <img class="mark" src="../icon.png" alt="" aria-hidden="true">
-    <h1>有人約吃飯，一起來嗎？</h1>
-    <p>在飯約 App 裡查看這場飯局的時間、地點和主揪，申請加入。</p>
-    <a class="button" id="open" href="#">打開飯約</a>
-    <a class="secondary" id="store" href="#">還沒有 App？前往 App Store</a>
-    <a class="secondary" id="play" href="#">Android？前往 Google Play</a>
-    <small>飯約：找人一起去吃。在公共場所見面，付款方式照飯局說明。</small>
+    <h1 data-t="title">有人約吃飯，一起來嗎？</h1>
+    <p data-t="lead">在飯飯 App 裡查看這場飯局的時間、地點和主揪，申請加入。</p>
+    <p class="notice" id="missing" role="status" hidden data-t="missing">看起來還沒安裝飯飯。</p>
+    <div id="actions">
+      <a class="button" id="open" href="#" data-t="open">打開飯飯</a>
+      <a class="secondary" id="store" href="#" data-t="store">還沒有 App？前往 App Store</a>
+      <a class="secondary" id="play" href="#" data-t="play">Android？前往 Google Play</a>
+    </div>
+    <p class="hint" id="hint" data-t="hint">裝好後回到這一頁，再按一次「打開飯飯」就會看到這場飯局。</p>
+    <small data-t="foot">飯飯：先吃頓飯，也許就心動了。在公共場所見面，付款方式照飯局說明。</small>
   </main>
   <script>
-    // ?dinner=<uuid> → eatwith://dinner/<uuid> (iPhone), or an intent: link on Android that opens the app
-    // or, when it isn't installed, Google Play. Set APP_STORE_URL once the app is listed.
-    const APP_STORE_URL = 'https://apps.apple.com/';
-    const PLAY_URL = 'https://play.google.com/store/apps/details?id=tw.tw466376.eatwith';
+    // ?dinner=<uuid> → eatwith://dinner/<uuid> on iPhone; on Android an intent: link that opens the app,
+    // or Google Play when it isn't installed. Nothing jumps to a store by itself: on iPhone, tapping
+    // "打開飯飯" without the app installed leaves this page visible, and then the App Store becomes
+    // the main button.
+    const APP_STORE_ID = '6816484254';
+    // App Store campaign links need the provider token (App Store Connect › App 分析 › 產生行銷活動連結).
+    // 【待老闆填寫：provider token】 — until it is set, App Store links carry no campaign.
+    const PROVIDER_TOKEN = '';
+    const CAMPAIGN = 'share_dinner';
+    const APP_STORE_URL = `https://apps.apple.com/tw/app/id${APP_STORE_ID}` +
+      (PROVIDER_TOKEN ? `?pt=${PROVIDER_TOKEN}&ct=${CAMPAIGN}&mt=8` : '');
+    const PLAY_URL = 'https://play.google.com/store/apps/details?id=tw.tw466376.eatwith' +
+      `&referrer=${encodeURIComponent(`utm_source=share&utm_medium=dinner&utm_campaign=${CAMPAIGN}`)}`;
+
+    const TEXT = {
+      en: {
+        title: 'Someone wants company for a meal. Join?',
+        lead: 'See the time, place and host of this meal in the fanfan app, and ask to join.',
+        missing: 'Looks like fanfan isn’t installed yet.',
+        open: 'Open fanfan',
+        store: 'No app yet? Get it on the App Store',
+        storeMain: 'Get fanfan on the App Store',
+        play: 'On Android? Get it on Google Play',
+        playOnly: 'No app yet? Get it on Google Play',
+        hint: 'Once it’s installed, come back to this page and tap “Open fanfan” again to see this meal.',
+        foot: 'fanfan: dinner first, sparks maybe. Meet in public places; who pays is in the meal’s details.',
+        doc: 'fanfan · Someone wants company for a meal',
+      },
+      zh: {
+        storeMain: '前往 App Store 下載飯飯',
+        playOnly: '還沒有 App？前往 Google Play',
+        doc: '飯飯 · 有人約吃飯',
+      },
+    };
+    const lang = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
+    const t = (key) => TEXT[lang][key];
+    if (lang === 'en') {
+      document.documentElement.lang = 'en';
+      document.title = t('doc');
+      document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = t(el.dataset.t); });
+    }
+
     const id = new URLSearchParams(location.search).get('dinner') || '';
     const valid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     const path = valid ? `dinner/${id.toLowerCase()}` : '';
-    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const android = /Android/.test(navigator.userAgent);
     const open = document.getElementById('open');
     const store = document.getElementById('store');
     const play = document.getElementById('play');
+    const missing = document.getElementById('missing');
+    const actions = document.getElementById('actions');
     store.href = APP_STORE_URL;
     play.href = PLAY_URL;
+
     if (android) {
       open.href = `intent://${path}#Intent;scheme=eatwith;package=tw.tw466376.eatwith;` +
         `S.browser_fallback_url=${encodeURIComponent(PLAY_URL)};end`;
       store.hidden = true;
-      play.textContent = '還沒有 App？前往 Google Play';
+      play.textContent = t('playOnly');
     } else {
       open.href = `eatwith://${path}`;
-      if (ios) play.hidden = true;
+      if (ios) {
+        play.hidden = true;
+        open.addEventListener('click', () => {
+          // If the app opened, this page went to the background; if it's still showing, there's no app.
+          setTimeout(() => {
+            if (document.visibilityState !== 'visible') return;
+            missing.hidden = false;
+            store.className = 'button';
+            store.textContent = t('storeMain');
+            open.className = 'button outline';
+            actions.prepend(store);
+          }, 1500);
+        });
+      }
     }
-    if (valid && ios) location.href = open.href;
   </script>
 </body>
 </html>
